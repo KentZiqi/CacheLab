@@ -1,7 +1,15 @@
 #include "cachelab.h"
+#include <stdio.h>
+
+long extractBits(long number, int bitPos, int bitNum)
+{
+    unsigned long mask = ~0;
+    mask = mask >> (64 - bitNum) << bitPos;
+    return number & mask;
+}
+
 
 int main()
 {
-    printSummary(0, 0, 0);
-    return 0;
+    printf("%lu\n", extractBits(172, 4, 4));
 }
