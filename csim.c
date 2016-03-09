@@ -1,5 +1,11 @@
 #include "cachelab.h"
 #include <stdio.h>
+#include <stdlib.h>
+
+typedef struct Slot {
+  short validBits;
+  long tagBits;
+} Slot;
 
 long extractBits(long number, int bitPos, int bitNum)
 {
@@ -15,7 +21,7 @@ long extractTagBits(long address, int s, int b)
 
 long extractRowIndex(long address, int s, int b)
 {
-    return extractBits(adress, b, s);
+    return extractBits(address, b, s);
 }
 
 long LeaderOfCacheSlot(long tagBits, int rowIndex, int b)
@@ -24,10 +30,24 @@ long LeaderOfCacheSlot(long tagBits, int rowIndex, int b)
     return tagBits & rowIndex;
 }
 
-
+Slot ** initializeCache(int S, int E)
+{
+    Slot **a = malloc(sizeof *a * S);
+    if (a){
+        for (int i = 0; i < S; i++)
+            {
+              a[i] = malloc(sizeof *a[i] * E);
+            }
+    }
+    return a;
+}
 
 
 int main()
 {
+    Slot ** cache = initializeCache(100,2);
+    Slot s = cache[99][1];
+    s.tagBits = 99;
+    printf("%lu\n", s.tagBits);
     printf("%lu\n", extractBits(172, 4, 4));
 }
