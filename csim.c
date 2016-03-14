@@ -1,6 +1,7 @@
 #include "cachelab.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 typedef struct Slot {
   short validBits;
@@ -42,12 +43,36 @@ Slot ** initializeCache(int S, int E)
     return a;
 }
 
+void insertStorage(Slot ** cache, int rowIndex, int tagBits, int E)
+{
+  for(int i=E-1; i>0; i--){
+    cache[rowIndex][i] = cache[rowIndex][i-1];
+  }
+  cache[rowIndex][0].tagBits = tagBits;
+  cache[rowIndex][0].validBits = 1;
+}
+
+bool checkCache(long address, Slot ** cache, int s, int b, int E, int* hitCount, int* missCount)
+{
+  long rowIndex = extractRowIndex(address, s, b);
+  long tagBits = extractTagBits(address,s, b);
+  for(int i=0; i<E; i++){
+    Slot currentSlot = cache[rowIndex][i];
+    if(currentSlot.validBits==1 || tagBits==currentSlot.tagBits){
+      hitCount++;
+      return true;
+    }
+  }
+  insertStorage(cache, rowIndex, tagBits, E);
+  missCount++;
+  return false;
+}
+
 
 int main()
 {
-    Slot ** cache = initializeCache(100,2);
-    Slot s = cache[99][1];
-    s.tagBits = 99;
-    printf("%lu\n", s.tagBits);
-    printf("%lu\n", extractBits(172, 4, 4));
+    Slot ** cache = initializeCache(1,5);
+    cache[0][0].tagBits = 1;cache[0][0].tagBits = 2;
+    insertStorage(cache, 0, 1, 5);
+    printf("%lu\n", cache[0][2].tagBits);
 }
