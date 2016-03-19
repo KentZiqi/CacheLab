@@ -22,10 +22,10 @@ long extractTagBits(long address, int s, int b) {
 }
 
 long extractRowIndex(long address, int s, int b) {
-    return extractBits(address, b, s);
+    return extractBits(address, b, s) >> b;
 }
 
-Slot **initializeCache(int S, int E) {
+Slot** initializeCache(int S, int E) {
     Slot **a = malloc(sizeof *a * S);
     if (a) {
         for (int i = 0; i < S; i++) {
@@ -49,26 +49,6 @@ bool isFull(Slot **cache, int rowIndex, int E) {
     return cache[rowIndex][E - 1].validBits == 1;
 }
 
-void applyAddressToCache(long address, Slot **cache, int s, int b, int E, int *hitCount, int *evictCount,
-                         int *missCount) {
-    long rowIndex = extractRowIndex(address, s, b);
-    long tagBits = extractTagBits(address, s, b);
-    for (int i = 0; i < E; i++) {
-        Slot currentSlot = cache[rowIndex][i];
-        if (currentSlot.validBits == 1 || tagBits == currentSlot.tagBits) {
-            hitCount++;
-            insertStorageAndShiftUntilCurrentSlotIndex(cache, rowIndex, tagBits, E, i);
-            return;
-        }
-    }
-    missCount++;
-    if (isFull(cache, rowIndex, E)) {
-        evictCount++;
-    }
-    insertStorageAndShiftUntilCurrentSlotIndex(cache, rowIndex, tagBits, E, E - 1);
-    return;
-}
-
 
 int verbosity = 0;
 int set_bits = 0;
@@ -78,6 +58,25 @@ int hit_count = 0;
 int miss_count = 0;
 int eviction_count = 0;
 char* trace_file;
+
+void applyAddressToCache(long address, Slot **cache, int s, int b, int E) {
+    long rowIndex = extractRowIndex(address, s, b);
+    long tagBits = extractTagBits(address, s, b);
+    for (int i = 0; i < E; i++) {
+        Slot currentSlot = cache[rowIndex][i];
+        if (currentSlot.validBits == 1 || tagBits == currentSlot.tagBits) {
+            hit_count++;
+            insertStorageAndShiftUntilCurrentSlotIndex(cache, rowIndex, tagBits, E, i);
+            return;
+        }
+    }
+    miss_count++;
+    if (isFull(cache, rowIndex, E)) {
+        eviction_count++;
+    }
+    insertStorageAndShiftUntilCurrentSlotIndex(cache, rowIndex, tagBits, E, E - 1);
+    return;
+}
 
 void printUsage(char *argv[]) {
     printf("Usage: %s [-hv] -s <num> -E <num> -b <num> -t <file>\n", argv[0]);
@@ -154,7 +153,7 @@ int main(int argc, char *argv[]) {
         sscanf(hexString, "%x", &address);
         printf("address in decimal is %d and in hex is %x\n", address, address);
         Slot **cache = initializeCache(1 << set_bits, associativity); // 1 << set_bits == 2^set_bits
-        applyAddressToCache(address, cache, set_bits, block_bits, associativity, &hit_count, &miss_count, &eviction_count);
+        applyAddressToCache(address, cache, set_bits, block_bits, associativity);
     }
     fclose(trace_file_pointer);
     printSummary(hit_count, miss_count, eviction_count);
