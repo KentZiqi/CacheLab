@@ -35,13 +35,24 @@ Slot** initializeCache(int S, int E) {
     return a;
 }
 
-void insertStorageAndShiftUntilCurrentSlotIndex(Slot **cache, int rowIndex, int tagBits, int E, int currentSlotIndex) {
+void insertStorageAndShiftUntilCurrentSlotIndex(Slot **cache, int rowIndex, long tagBits, int E, int currentSlotIndex) {
     for (int i = currentSlotIndex; i > 0; i--) {
         Slot previousSlot = cache[rowIndex][i - 1];
         cache[rowIndex][i] = previousSlot;
     }
     cache[rowIndex][0].tagBits = tagBits;
     cache[rowIndex][0].validBits = 1;
+}
+
+void printCache(Slot **cache, int s, int E){
+    printf("cache: \n");
+    for(int i=0; i < 1<<s; i++){
+      for(int j=0; j<E; j++){
+        printf("validBits: %d,", cache[i][j].validBits);
+        printf("tagBits: %lx", cache[i][j].tagBits);
+      }
+      printf("\n");
+    }
 }
 
 
@@ -59,12 +70,13 @@ int miss_count = 0;
 int eviction_count = 0;
 char* trace_file;
 
+
 void applyAddressToCache(long address, Slot **cache, int s, int b, int E) {
     long rowIndex = extractRowIndex(address, s, b);
     long tagBits = extractTagBits(address, s, b);
     for (int i = 0; i < E; i++) {
         Slot currentSlot = cache[rowIndex][i];
-        if (currentSlot.validBits == 1 || tagBits == currentSlot.tagBits) {
+        if (currentSlot.validBits == 1 && tagBits == currentSlot.tagBits) {
             hit_count++;
             insertStorageAndShiftUntilCurrentSlotIndex(cache, rowIndex, tagBits, E, i);
             return;
@@ -142,18 +154,20 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "%s: %s\n", trace_file, strerror(errno));
         exit(1);
     }
+    Slot **cache = initializeCache(1 << set_bits, associativity); // 1 << set_bits == 2^set_bits
     while (fgets(inputline, 100, trace_file_pointer) != NULL) {
-        char discard[20];
+        char operation[20];
         char str[20];
-        sscanf(inputline, "%s %s", discard, str);
+        sscanf(inputline, "%s %s", operation, str);
         char hexPrefix[20];
         strcpy (hexPrefix, "0x");
         char* hexString = strcat(hexPrefix, str);
         unsigned int address;
         sscanf(hexString, "%x", &address);
-        printf("address in decimal is %d and in hex is %x\n", address, address);
-        Slot **cache = initializeCache(1 << set_bits, associativity); // 1 << set_bits == 2^set_bits
         applyAddressToCache(address, cache, set_bits, block_bits, associativity);
+        if (!strcmp(operation, "M")){
+          applyAddressToCache(address, cache, set_bits, block_bits, associativity);
+        }
     }
     fclose(trace_file_pointer);
     printSummary(hit_count, miss_count, eviction_count);
