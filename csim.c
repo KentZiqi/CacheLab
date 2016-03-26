@@ -78,16 +78,13 @@ void applyAddressToCache(long address, Slot **cache, int s, int b, int E) {
         Slot currentSlot = cache[rowIndex][i];
         if (currentSlot.validBits == 1 && tagBits == currentSlot.tagBits) {
             hit_count++;
-            printf("hit: %lx\n", address);
             insertStorageAndShiftUntilCurrentSlotIndex(cache, rowIndex, tagBits, E, i);
             return;
         }
     }
     miss_count++;
-    printf("miss: %lx\n", address);
     if (isFull(cache, rowIndex, E)) {
         eviction_count++;
-        printf("evict: %lx\n", address);
     }
     insertStorageAndShiftUntilCurrentSlotIndex(cache, rowIndex, tagBits, E, E - 1);
     return;
