@@ -23,22 +23,22 @@ int is_transpose(int M, int N, int A[N][M], int B[M][N]);
 char transpose_submit_desc[] = "Transpose submission";
 
 void transpose_submit(int M, int N, int A[N][M], int B[M][N]) {
-    int x_block = 4;
-    int y_block = 4;
+    int x_block = 5;
+    int y_block = 5;
     int diagonal = 0;
     int diagonal_index = 0;
-    for (int i = 0; i < M; i += x_block) {
-        for (int j = 0; j < N; j += y_block) {
-            for (int k = i; k < i + x_block; ++k) {
-                for (int l = j; l < j + y_block; ++l) {
-                    if (k < N && l < M && l != k) {
+    for (int i = 0; i < N; i += x_block) {
+        for (int j = 0; j < M; j += y_block) {
+            for (int k = i; k < i + x_block && k < N; ++k) {
+                for (int l = j; l < j + y_block && l < M; ++l) {
+                    if (l != k) {
                         B[l][k] = A[k][l];
                     } else if (l == k) {
                         diagonal = A[l][l];
                         diagonal_index = l;
                     }
                 }
-                if (i == j) {
+                if (i == j && k < N) {
                     B[diagonal_index][diagonal_index] = diagonal;
                 }
             }
