@@ -8,6 +8,7 @@
  * on a 1KB direct mapped cache with a block size of 32 bytes.
  */
 #include <stdio.h>
+#include <stdbool.h>
 #include "cachelab.h"
 
 int is_transpose(int M, int N, int A[N][M], int B[M][N]);
@@ -20,30 +21,29 @@ int is_transpose(int M, int N, int A[N][M], int B[M][N]);
  *     be graded.
  */
 char transpose_submit_desc[] = "Transpose submission";
-void transpose_submit(int M, int N, int A[N][M], int B[M][N])
-{
-  int x_block = 6;
-  int y_block = 6;
-  for (int i = 0; i < M; i += x_block) {
-      for (int j = 0; j < N; j += y_block) {
-          for (int k = i; k < i + x_block; ++k) {
-              for (int l = j; l < j + y_block; ++l) {
-                  if(k < N && l < M){
-                    B[l][k] = A[k][l];
-                  }
-              }
-          }
-      }
-  }
-  // int d  = 0;
-  // if (M > N){
-  //   d = M;
-  // }else{
-  //   d = N;
-  // }
-  // for(int i = 0;i < d; i++){
-  //   B[i][i] = A[i][i];
-  // }
+
+void transpose_submit(int M, int N, int A[N][M], int B[M][N]) {
+    int x_block = 4;
+    int y_block = 4;
+    int diagonal = 0;
+    int diagonal_index = 0;
+    for (int i = 0; i < M; i += x_block) {
+        for (int j = 0; j < N; j += y_block) {
+            for (int k = i; k < i + x_block; ++k) {
+                for (int l = j; l < j + y_block; ++l) {
+                    if (k < N && l < M && l != k) {
+                        B[l][k] = A[k][l];
+                    } else if (l == k) {
+                        diagonal = A[l][l];
+                        diagonal_index = l;
+                    }
+                }
+                if (i == j) {
+                    B[diagonal_index][diagonal_index] = diagonal;
+                }
+            }
+        }
+    }
 }
 
 /*
@@ -55,8 +55,8 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
  * trans - A simple baseline transpose function, not optimized for the cache.
  */
 char trans_desc[] = "Simple row-wise scan transpose";
-void trans(int M, int N, int A[N][M], int B[M][N])
-{
+
+void trans(int M, int N, int A[N][M], int B[M][N]) {
     int i, j, tmp;
 
     for (i = 0; i < N; i++) {
@@ -75,8 +75,7 @@ void trans(int M, int N, int A[N][M], int B[M][N])
  *     performance. This is a handy way to experiment with different
  *     transpose strategies.
  */
-void registerFunctions()
-{
+void registerFunctions() {
     /* Register your solution function */
     registerTransFunction(transpose_submit, transpose_submit_desc);
 
@@ -90,8 +89,7 @@ void registerFunctions()
  *     A. You can check the correctness of your transpose by calling
  *     it before returning from the transpose function.
  */
-int is_transpose(int M, int N, int A[N][M], int B[M][N])
-{
+int is_transpose(int M, int N, int A[N][M], int B[M][N]) {
     int i, j;
 
     for (i = 0; i < N; i++) {

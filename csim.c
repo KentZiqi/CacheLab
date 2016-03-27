@@ -11,20 +11,32 @@ typedef struct Slot {
     long tagBits;
 } Slot;
 
+/**
+ * Helper function for extracting certain bits from `long number`
+ */
 long extractBits(long number, int bitPos, int bitNum) {
     unsigned long mask = ~0;
     mask = mask >> (64 - bitNum) << bitPos;
     return number & mask;
 }
 
+/**
+ * Extracts tag bits from `long address`
+ */
 long extractTagBits(long address, int s, int b) {
     return extractBits(address, b + s, 64 - b - s);
 }
 
+/**
+ * Extracts row index from `long address`
+ */
 long extractRowIndex(long address, int s, int b) {
     return extractBits(address, b, s) >> b;
 }
 
+/**
+ * Initializes the cache
+ */
 Slot** initializeCache(int S, int E) {
     Slot **a = malloc(sizeof *a * S);
     if (a) {
