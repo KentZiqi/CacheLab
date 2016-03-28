@@ -1,4 +1,6 @@
 /*
+ * kshikama, Kent Shikama; zxiong, Ziqi Xiong
+ *
  * trans.c - Matrix transpose B = A^T
  *
  * Each transpose function must have a prototype of the form:
@@ -6,6 +8,7 @@
  *
  * A transpose function is evaluated by counting the number of misses
  * on a 1KB direct mapped cache with a block size of 32 bytes.
+ *
  */
 #include <stdio.h>
 #include <stdbool.h>
@@ -22,16 +25,32 @@ int is_transpose(int M, int N, int A[N][M], int B[M][N]);
  */
 char transpose_submit_desc[] = "Transpose submission";
 
+/**
+ * Tranposes a matrix A and stores the result in B
+ *
+ * The method uses blocking and defers assigning the diagonals until the end of the block.
+ * The diagonal defering allows there to be less conflict misses.
+ */
 void transpose_submit(int M, int N, int A[N][M], int B[M][N]) {
-    int x_block = 5;
-    int y_block = 5;
     int diagonal = 0;
     int diagonal_index = 0;
+    int x_block = 0; // Set these based on size of M
+    int y_block = 0;
+    if (M == 61) {
+        x_block = 14;
+        y_block = 14;
+    } else if (M == 32) {
+        x_block = 8;
+        y_block = 8;
+    } else { // For 64 x 64
+        x_block = 4;
+        y_block = 4;
+    }
     for (int i = 0; i < N; i += x_block) {
         for (int j = 0; j < M; j += y_block) {
             for (int k = i; k < i + x_block && k < N; ++k) {
                 for (int l = j; l < j + y_block && l < M; ++l) {
-                    if (l != k) {
+                    if (l != k) { // Defer elements on the diagonal
                         B[l][k] = A[k][l];
                     } else if (l == k) {
                         diagonal = A[l][l];
